@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="pl">
+
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="x-ua-compatible" content="ie=edge">
+    <title></title>
+    <meta name="description" content="">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+    <link rel="manifest" href="site.webmanifest">
+    <link rel="apple-touch-icon" href="icon.png">
+    <!-- Place favicon.ico in the root directory -->
+
+    <link rel="stylesheet" href="css/normalize.css">
+    <link rel="stylesheet" href="css/main.css">
+</head>
+
+<body>
+<h1>Eksporter wizytówek</h1>
+<form class="form-wrapper" id="exportForm">
+    <input type="text" id="keywords" placeholder="Wpisz słowa kluczowe" required>
+    <input type="text" id="city" placeholder="Podaj nazwę miejscowości" required>
+    <button class="submit">Wyeksportuj</button>
+</form>
+<div class="preloader" id="mainPreloader">
+    <div class="wrap">
+        <div class="loading">
+            <div class="bounceball"></div>
+            <div class="text">PROSZĘ ZACZEKAĆ, EKSPORTOWANIE W TOKU...</div>
+        </div>
+    </div>
+</div>
+<script src="js/main.js"></script>
+</body>
+
+</html>
