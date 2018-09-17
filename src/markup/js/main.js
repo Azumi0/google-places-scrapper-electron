@@ -16,8 +16,8 @@ jQuery(window).on('load', () => {
     dialog.showSaveDialog({
       filters: [
         {
-          name: 'Arkusz xls MS Excel',
-          extensions: ['xls'],
+          name: 'Arkusz xlsx MS Excel',
+          extensions: ['xlsx'],
         },
       ],
     }, (savePath) => {
