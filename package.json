@@ -33,7 +33,6 @@
       },
       "electronWinstallerConfig": {
         "name": "google_places_scrapper",
-        "iconUrl": "./src/markup/favicon.ico",
         "setupIcon": "./src/markup/Install.ico"
       },
       "electronInstallerDebian": {
