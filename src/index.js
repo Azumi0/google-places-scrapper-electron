@@ -190,7 +190,7 @@ ipcMain.on('scrape:start', (e, data) => {
                 Object.entries(googleMapsPlacesFiledsMapping)
                   .map((mapEntry, mapIndex) => {
                     ws.cell(rowIndex, (mapIndex + 1))
-                      .string((locutusEmpty(parsedRecord[mapEntry[0]])) ? '' : parsedRecord[mapEntry[0]]);
+                      .string((locutusEmpty(parsedRecord[mapEntry[0]])) ? '' : String(parsedRecord[mapEntry[0]]));
                   });
 
                 rowIndex += 1;
