@@ -2,7 +2,7 @@
   "name": "google-places-scrapper",
   "productName": "google-places-scrapper",
   "version": "1.0.0",
-  "description": "My Electron application description",
+  "description": "Application to export places data from google API.",
   "main": "src/index.js",
   "scripts": {
     "start": "electron-forge start",
@@ -12,8 +12,8 @@
     "lint": "eslint src --color"
   },
   "keywords": [],
-  "author": "azumi",
-  "license": "MIT",
+  "author": "Przemysław Wrzeszcz",
+  "license": "BOX",
   "config": {
     "forge": {
       "make_targets": {
@@ -31,10 +31,22 @@
         "packageManager": "npm"
       },
       "electronWinstallerConfig": {
-        "name": "google_places_scrapper"
+        "name": "google_places_scrapper",
+        "iconUrl": "./src/markup/favicon.ico",
+        "setupIcon": "./src/markup/Install.ico"
       },
-      "electronInstallerDebian": {},
-      "electronInstallerRedhat": {},
+      "electronInstallerDebian": {
+        "icon": "./src/markup/icon.png",
+        "categories": [
+          "Utility"
+        ]
+      },
+      "electronInstallerDMG": {
+        "background": "./src/markup/background-mac-installer.png",
+        "icon": "./src/markup/icon.icns",
+        "format": "ULFO",
+        "overwrite": true
+      },
       "github_repository": {
         "owner": "",
         "name": ""
