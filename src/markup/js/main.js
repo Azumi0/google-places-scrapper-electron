@@ -35,11 +35,13 @@ jQuery(window).on('load', () => {
 
         const keywords = $('#keywords').val();
         const city = $('#city').val();
+        const radius = parseInt($('#radius').val());
 
         ipcRenderer.send('scrape:start', {
           savePath,
           keywords,
           city,
+          radius,
         });
       });
     });

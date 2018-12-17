@@ -18,9 +18,13 @@
 <body>
 <h1>Eksporter wizytówek</h1>
 <form class="form-wrapper" id="exportForm">
+    <label for="keywords">Słowa kluczowe</label>
     <input type="text" id="keywords" placeholder="Wpisz słowa kluczowe" required>
-    <input type="text" id="city" placeholder="Podaj nazwę miejscowości" required>
-    <p class="info-text">Wyeksportowane zostaną wizytówki znajdujące się w promieniu 50 000 metrów od podanej miejscowości</p>
+    <label for="city">Adres</label>
+    <input type="text" id="city" placeholder="Podaj adres" required>
+    <label for="radius">Promień wyszukiwania w metrach</label>
+    <input type="number" id="radius" step="1" min="10" max="50000" value="50000" required>
+    <p class="info-text">Wyeksportowane zostanie 60 wizytówek najbliższych do podanego adresu</p>
     <button class="submit">Wyeksportuj</button>
 </form>
 <div class="preloader" id="mainPreloader">

@@ -9,9 +9,11 @@ const googleMapsClient = require('@google/maps').createClient({
 
 const googleMapsPlacesFiledsMapping = {
   name: 'nazwa',
-  formatted_address: 'adres fizyczny',
+  route: 'ulica',
+  street_number: 'numer domu',
   locality: 'miasto',
   postal_code: 'kod pocztowy',
+  country: 'kraj',
   formatted_phone_number: 'numer telefonu',
   website: 'adres strony www',
   url: 'link do wizytówki',
@@ -87,6 +89,72 @@ const getSafeErrorValue = (element) => {
   return '';
 };
 
+const sleep = (milliseconds) => {
+  const start = new Date().getTime();
+
+  for (let i = 0; i < 1e7; i++) {
+    if ((new Date().getTime() - start) > milliseconds) {
+      break;
+    }
+  }
+};
+
+const fetchListings = (parameters, nextPageToken = null, retryCount = 0) => {
+  const reqParams = (nextPageToken === null) ? parameters : {
+    pagetoken: nextPageToken,
+  };
+
+  return new Promise((fetchListingsResolve, fetchListingsReject) => {
+    googleMapsClient.places(reqParams)
+      .asPromise()
+      .then((responsePlaces) => {
+        const fetchPromises = [];
+
+        responsePlaces.json.results.map((el) => {
+          fetchPromises.push(googleMapsClient.place({
+            placeid: el.place_id,
+            language: 'pl',
+          }).asPromise());
+        });
+
+        Promise.all(fetchPromises).then((fethedData) => {
+          if (locutusEmpty(responsePlaces.json.next_page_token)) {
+            return fetchListingsResolve(fethedData);
+          }
+
+          sleep(1500);
+          fetchListings(parameters, responsePlaces.json.next_page_token).then((nextPageData) => {
+            fetchListingsResolve(fethedData.concat(nextPageData));
+          }).catch((nextPageDetails) => {
+            const typeErr = valueType(nextPageDetails);
+            let messageErr = nextPageDetails;
+
+            if (typeErr === 'object') {
+              if (!locutusEmpty(nextPageDetails.json.status)) {
+                messageErr = nextPageDetails.json.status;
+              }
+            }
+
+            if (messageErr === 'INVALID_REQUEST') {
+              sleep(1500);
+              fetchListings(parameters, responsePlaces.json.next_page_token).then((retryNextPageData) => {
+                fetchListingsResolve(fethedData.concat(retryNextPageData));
+              }).catch((retryNextPageDetails) => {
+                fetchListingsReject(retryNextPageDetails);
+              });
+            } else {
+              fetchListingsReject(nextPageDetails);
+            }
+          });
+        }).catch((errDetails) => {
+          fetchListingsReject(errDetails);
+        });
+      })
+      .catch((errPlaces) => {
+        fetchListingsReject(errPlaces);
+      });
+  });
+};
 
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
 if (require('electron-squirrel-startup')) { // eslint-disable-line global-require
@@ -155,72 +223,75 @@ ipcMain.on('scrape:start', (e, data) => {
     .then((response) => {
       const geocode = response.json.results[0].geometry.location;
 
-      googleMapsClient.places({
+      fetchListings({
         query: data.keywords,
         language: 'pl',
         location: [geocode.lat, geocode.lng],
-        radius: 50000,
-      })
-        .asPromise()
-        .then((responsePlaces) => {
-          const fetchPromises = [];
+        radius: data.radius,
+      }).then((fethedData) => {
+        const wb = new xl.Workbook();
+        const ws = wb.addWorksheet('Sheet 1');
+        let rowIndex = 1;
 
-          responsePlaces.json.results.map((el) => {
-            fetchPromises.push(googleMapsClient.place({
-              placeid: el.place_id,
-              language: 'pl',
-            }).asPromise());
-          });
+        Object.entries(googleMapsPlacesFiledsMapping).map((mapEntry, mapIndex) => {
+          ws.cell(rowIndex, (mapIndex + 1)).string(mapEntry[1]);
+        });
 
-          Promise.all(fetchPromises).then((fethedData) => {
-            const wb = new xl.Workbook();
-            const ws = wb.addWorksheet('Sheet 1');
-            let rowIndex = 1;
+        rowIndex += 1;
 
-            Object.entries(googleMapsPlacesFiledsMapping).map((mapEntry, mapIndex) => {
-              ws.cell(rowIndex, (mapIndex + 1)).string(mapEntry[1]);
-            });
+        fethedData.map((fetchedRecord) => {
+          if (parseInt(fetchedRecord.status) === 200) {
+            const parsedRecord = Object.assign(
+              parseAddressComponents(fetchedRecord.json.result.address_components),
+              fetchedRecord.json.result,
+            );
+
+            Object.entries(googleMapsPlacesFiledsMapping)
+              .map((mapEntry, mapIndex) => {
+                ws.cell(rowIndex, (mapIndex + 1))
+                  .string((locutusEmpty(parsedRecord[mapEntry[0]])) ? '' : String(parsedRecord[mapEntry[0]]));
+              });
 
             rowIndex += 1;
-
-            fethedData.map((fetchedRecord) => {
-              if (parseInt(fetchedRecord.status) === 200) {
-                const parsedRecord = Object.assign(parseAddressComponents(fetchedRecord.json.result.address_components), fetchedRecord.json.result);
-
-                Object.entries(googleMapsPlacesFiledsMapping)
-                  .map((mapEntry, mapIndex) => {
-                    ws.cell(rowIndex, (mapIndex + 1))
-                      .string((locutusEmpty(parsedRecord[mapEntry[0]])) ? '' : String(parsedRecord[mapEntry[0]]));
-                  });
-
-                rowIndex += 1;
-              }
-            });
-
-            wb.write(data.savePath);
-
-            mainWindow.webContents.send('scrape:finish', {
-              success: true,
-              message: '',
-            });
-          }).catch((errDetails) => {
-            mainWindow.webContents.send('scrape:finish', {
-              success: false,
-              message: getSafeErrorValue(errDetails),
-            });
-          });
-        })
-        .catch((errPlaces) => {
-          mainWindow.webContents.send('scrape:finish', {
-            success: false,
-            message: getSafeErrorValue(errPlaces),
-          });
+          }
         });
+
+        wb.write(data.savePath);
+
+        mainWindow.webContents.send('scrape:finish', {
+          success: true,
+          message: '',
+        });
+      })
+      .catch((errPlaces) => {
+        const typeErrPlaces = valueType(errPlaces);
+        let messageErrPlaces = errPlaces;
+
+        if (typeErrPlaces === 'object') {
+          if (!locutusEmpty(errPlaces.json.status)) {
+            messageErrPlaces = errPlaces.json.status;
+          }
+        }
+
+        mainWindow.webContents.send('scrape:finish', {
+          success: false,
+          message: getSafeErrorValue(messageErrPlaces),
+        });
+      });
     })
     .catch((err) => {
+      const typeErr = valueType(err);
+      let messageErr = err;
+
+      if (typeErr === 'object') {
+        if (!locutusEmpty(err.json.status)) {
+          messageErr = err.json.status;
+        }
+      }
+
       mainWindow.webContents.send('scrape:finish', {
         success: false,
-        message: getSafeErrorValue(err),
+        message: getSafeErrorValue(messageErr),
       });
     });
 });
