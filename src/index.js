@@ -99,7 +99,7 @@ const sleep = (milliseconds) => {
   }
 };
 
-const fetchListings = (parameters, nextPageToken = null, retryCount = 0) => {
+const fetchListings = (parameters, nextPageToken = null) => {
   const reqParams = (nextPageToken === null) ? parameters : {
     pagetoken: nextPageToken,
   };
