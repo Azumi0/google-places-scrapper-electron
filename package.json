@@ -29,6 +29,7 @@
         ]
       },
       "electronPackagerConfig": {
+        "ignore": ["\\.idea"],
         "packageManager": "npm"
       },
       "electronWinstallerConfig": {
